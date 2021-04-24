@@ -1,18 +1,13 @@
 package com.offlical.net.connect4;
 
-import com.offlical.net.Connect4Bot;
 import com.offlical.net.ai.AIPlayer;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
-import twitter4j.Twitter;
 
 import java.util.Arrays;
 import java.util.Random;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
-
 public class Connect4Game {
 
     public String[][] grid;
@@ -34,7 +29,7 @@ public class Connect4Game {
     public String currentColor;
     public String currentEmoji;
 
-    public Connect4Game(Twitter twitterInstance, AIPlayer bluePlayer, AIPlayer redPlayer) {
+    public Connect4Game(AIPlayer bluePlayer, AIPlayer redPlayer) {
 
         this.redPlayer = redPlayer;
         this.bluePlayer = bluePlayer;

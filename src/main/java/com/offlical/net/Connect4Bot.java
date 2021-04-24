@@ -62,12 +62,12 @@ public class Connect4Bot {
         AIPlayer red = new AIPlayer(5,Connect4Game.RED_PLAYER_EMOJI);
         AIPlayer blue = new AIPlayer(5,Connect4Game.BLUE_PLAYER_EMOJI);
 
-        game = new Connect4Game(twitterInstance,red,blue);
+        game = new Connect4Game(red,blue);
         applyJSONData();
 
 
 
-        //sendGameTweet(game);
+        sendGameTweet(game);
 
 
        timer = new Timer();
@@ -181,7 +181,7 @@ public class Connect4Bot {
         AIPlayer red = new AIPlayer(5,Connect4Game.RED_PLAYER_EMOJI);
         AIPlayer blue = new AIPlayer(5,Connect4Game.BLUE_PLAYER_EMOJI);
 
-        Connect4Game game = new Connect4Game(twitterInstance,red,blue);
+        Connect4Game game = new Connect4Game(red,blue);
 
         try {
             sendGameTweet(game);
@@ -230,7 +230,6 @@ public class Connect4Bot {
         rts = gameTweet.getRetweetCount();
         likes = gameTweet.getFavoriteCount();
 
-        System.out.println("RT: " + rts + " likes: " + likes);
 
         if(likes < rts)
             game.play(rtMove);
@@ -238,8 +237,6 @@ public class Connect4Bot {
             game.play(likeMove);
         else{
             Random r = new Random();
-
-            System.out.println("using random play!");
             boolean likesPlay = r.nextBoolean();
             if(likesPlay)
                 game.play(likeMove);
@@ -249,9 +246,6 @@ public class Connect4Bot {
 
         if(game.gameOver)
         {
-            System.out.println("game over!");
-
-
             timer.cancel();
             timer = new Timer();
             tweetWinner(game);
@@ -355,51 +349,5 @@ public class Connect4Bot {
         TwitterFactory tf = new TwitterFactory(cb.build());
         return tf.getInstance();
     }
-
-
-
-    public static void consoleConnect4() throws InterruptedException {
-        Scanner s = new Scanner(System.in);
-
-        AIPlayer aiPlayer = new AIPlayer(5, Connect4Game.BLUE_PLAYER_EMOJI);
-
-        //  Connect4Player player = new Connect4Player(aiPlayer.getOpponentSymbol(),"Player");
-
-        AIPlayer ai2 = new AIPlayer(5,Connect4Game.RED_PLAYER_EMOJI) {
-            @Override
-            public String getGameName() {
-                return "AI Player 2";
-            }
-        };
-
-        System.out.println("Player's symbol: " + ai2.getSymbol());
-        System.out.println("AI Symbol: " + aiPlayer.getSymbol());
-        Connect4Game game = new Connect4Game(null,aiPlayer,ai2);
-
-        while(!game.gameOver) {
-
-            String[][] instance = new String[6][7];
-            if(game.currentPlayer == aiPlayer) {
-                for(int row  = 0; row < game.grid.length ; row++)
-                    for(int col = 0; col < game.grid[0].length; col++)
-                        instance[row][col] = game.grid[row][col];
-
-
-                //game.play(aiPlayer.bestMove(instance));
-                System.out.println("help");
-            } else {
-                for(int row  = 0; row < game.grid.length ; row++)
-                    for(int col = 0; col < game.grid[0].length; col++)
-                        instance[row][col] = game.grid[row][col];
-
-
-               // game.play(ai2.bestMove(instance));
-            }
-            game.display(game.grid);
-            Thread.sleep(2000);
-            game.nextTurn();
-        }
-    }
-
 
 }
