@@ -29,7 +29,7 @@ public class Connect4Bot {
     private int likeMove = 0;
     private Timer timer;
 
-    private long UPDATE_TIME = 15000;
+    private long UPDATE_TIME = 1800000L;
 
     private Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
@@ -66,9 +66,7 @@ public class Connect4Bot {
         applyJSONData();
 
 
-
         sendGameTweet(game);
-
 
        timer = new Timer();
         timer.schedule(new TimerTask() {
