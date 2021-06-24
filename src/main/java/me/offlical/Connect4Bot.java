@@ -6,6 +6,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import me.offlical.ai.AIPlayer;
 import me.offlical.connect4.Connect4Game;
+import me.offlical.json.Connect4JSON;
 import me.offlical.twitter.TwitterManager;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -19,7 +20,8 @@ import java.util.*;
 public class Connect4Bot {
 
 
-    private TwitterManager twitterManager;
+    private final TwitterManager twitterManager;
+    private final Connect4JSON json;
 
     private static String LIKE_EMOJI = "❤";
     private static String RT_EMOJI = "\uD83D\uDD01";
@@ -32,7 +34,7 @@ public class Connect4Bot {
     private final long UPDATE_TIME = 1800000L;
     private Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
-    private int blueWins = 0,redWins = 0,gameNum = 1;
+    private int blueWins = 0, redWins = 0, gameNum = 1;
     private final Connect4Game game;
 
     static String CONSUMER_KEY;
@@ -51,24 +53,30 @@ public class Connect4Bot {
         CONSUMER_KEY = (String) object.get("consumer_key");
         CONSUMER_SECRET = (String) object.get("consumer_secret");
 
-        TwitterManager twitterManager = new TwitterManager(CONSUMER_KEY,CONSUMER_SECRET,ACCESS_TOKEN,ACCESS_TOKEN_SECRET);
+        TwitterManager twitterManager = new TwitterManager(CONSUMER_KEY, CONSUMER_SECRET, ACCESS_TOKEN, ACCESS_TOKEN_SECRET);
         new Connect4Bot(twitterManager);
     }
 
     Connect4Bot(TwitterManager twitterManager) throws Exception {
 
         this.twitterManager = twitterManager;
+        this.json = new Connect4JSON("");
 
-        AIPlayer red = new AIPlayer(5,Connect4Game.RED_PLAYER_EMOJI);
-        AIPlayer blue = new AIPlayer(5,Connect4Game.BLUE_PLAYER_EMOJI);
+        AIPlayer red = new AIPlayer(5, Connect4Game.RED_PLAYER_EMOJI);
+        AIPlayer blue = new AIPlayer(5, Connect4Game.BLUE_PLAYER_EMOJI);
 
-        game = new Connect4Game(red,blue);
-        applyJSONData();
+        game = new Connect4Game(red, blue);
 
+        int[] stats = json.readStats();
+        this.blueWins = stats[0];
+        this.redWins = stats[1];
+        this.gameNum = stats[2];
+        json.readAndApplyGameState(game);
 
-        sendGameTweet(game);
+        resetMoves();
+        twitterManager.sendGameTweet(this);
 
-       timer = new Timer();
+        timer = new Timer();
         timer.schedule(new TimerTask() {
             @Override
             public void run() {
@@ -78,111 +86,19 @@ public class Connect4Bot {
                     e.printStackTrace();
                 }
             }
-        },UPDATE_TIME,UPDATE_TIME);
-    }
-
-    private void applyJSONData() throws IOException, ParseException {
-
-        File file = new File("game_data.json");
-
-        if(!file.exists())
-        {
-            file.createNewFile();
-
-            JSONObject object = new JSONObject();
-
-            object.put("blue_wins",0);
-            object.put("red_wins",0);
-            object.put("games_count",1);
-
-
-            JsonParser parser = new JsonParser();
-            JsonElement je = parser.parse(object.toJSONString());
-
-            writer = new PrintWriter(file);
-            writer.write(gson.toJson(je));
-            writer.flush();
-            writer.close();
-
-            gameNum = 1;
-            blueWins = 0;
-            redWins = 0;
-        } else {
-
-            JSONObject object = (JSONObject) new JSONParser().parse(new FileReader(file));
-
-            long blueW = (long) object.getOrDefault("blue_wins",1);
-            long redW = (long) object.getOrDefault("red_wins",0);
-            long gNum = (long) object.getOrDefault("games_count",0);
-
-            if(object.get("last_game_state") != null)
-            {
-                System.out.println("Loading game from file...");
-                game.fromJSON((JSONObject) object.get("last_game_state"));
-                System.out.println("Loaded successfully!");
-            }
-
-            gameNum = (int)gNum;
-            redWins = (int)redW;
-            blueWins = (int)blueW;
-        }
-
-
-    }
-
-    void updateEndGameJSON() throws Exception {
-
-        File file = new File("game_data.json");
-
-        JSONObject object = (JSONObject) new JSONParser().parse(new FileReader(file));
-
-        object.put("blue_wins",blueWins);
-        object.put("red_wins",redWins);
-        object.put("games_count",gameNum);
-        object.put("last_game_state",null);
-
-        JsonParser parser = new JsonParser();
-        JsonElement je = parser.parse(object.toJSONString());
-
-        writer = new PrintWriter(file);
-        writer.write(gson.toJson(je));
-        writer.flush();
-        writer.close();
-    }
-
-    void saveGameState(Connect4Game game) throws Exception {
-
-        File file = new File("game_data.json");
-
-        JSONObject object = (JSONObject) new JSONParser().parse(new FileReader(file));
-
-        LinkedHashMap<String,Object> values = new LinkedHashMap<String,Object>(3);
-
-        values.put("turn",game.turn);
-        values.put("currentPlayer", game.currentColor);
-        values.put("grid",game.gridToJSONString());
-
-        object.put("last_game_state",values);
-
-        JsonParser parser = new JsonParser();
-        JsonElement je = parser.parse(object.toJSONString());
-
-        writer = new PrintWriter(file);
-        writer.write(gson.toJson(je));
-        writer.flush();
-        writer.close();
-
+        }, UPDATE_TIME, UPDATE_TIME);
     }
 
     void restart() {
 
-        AIPlayer red = new AIPlayer(5,Connect4Game.RED_PLAYER_EMOJI);
-        AIPlayer blue = new AIPlayer(5,Connect4Game.BLUE_PLAYER_EMOJI);
+        AIPlayer red = new AIPlayer(5, Connect4Game.RED_PLAYER_EMOJI);
+        AIPlayer blue = new AIPlayer(5, Connect4Game.BLUE_PLAYER_EMOJI);
 
-        Connect4Game game = new Connect4Game(red,blue);
+        Connect4Game game = new Connect4Game(red, blue);
 
         try {
-            sendGameTweet(game);
+            resetMoves();
+            twitterManager.sendGameTweet(this);
         } catch (TwitterException e) {
             e.printStackTrace();
         }
@@ -197,7 +113,7 @@ public class Connect4Bot {
                     e.printStackTrace();
                 }
             }
-        },UPDATE_TIME,UPDATE_TIME);
+        }, UPDATE_TIME, UPDATE_TIME);
     }
 
     void gameUpdate(Connect4Game game) throws Exception {
@@ -209,19 +125,15 @@ public class Connect4Bot {
             e.printStackTrace();
         }
 
-        if(game.gameOver) {
+        if (game.gameOver) {
             System.out.println("game ended!");
             return;
         }
 
         System.out.println("Game update!");
-        if(gameTweet == null) {
+        if (gameTweet == null) {
 
-            System.out.println("====================================================================");
-            System.out.println("OH FUCK OH GOD OH FUCK THE BOT GOT A NULL TWEET OH GOD OH FUCK OH GOD");
-            System.out.println("OH FUCK OH GOD OH FUCK THE BOT GOT A NULL TWEET OH GOD OH FUCK OH GOD");
-            System.out.println("OH FUCK OH GOD OH FUCK THE BOT GOT A NULL TWEET OH GOD OH FUCK OH GOD");
-            System.out.println("====================================================================");
+            System.out.println("Null Tweet! No Tweets found?");
             return;
         }
 
@@ -230,106 +142,97 @@ public class Connect4Bot {
         likes = gameTweet.getFavoriteCount();
 
 
-        if(likes < rts)
+        if (likes < rts)
             game.play(rtMove);
-        else if(likes > rts)
+        else if (likes > rts)
             game.play(likeMove);
         else {
             Random r = new Random();
             boolean likesPlay = r.nextBoolean();
-            if(likesPlay)
+            if (likesPlay)
                 game.play(likeMove);
             else
                 game.play(rtMove);
         }
 
-        if(game.gameOver)
-        {
-            timer.cancel();
+        if (game.gameOver) {
             timer = new Timer();
-            tweetWinner(game);
+            twitterManager.tweetWinner(game,gameNum,blueWins,redWins);
             timer.schedule(new TimerTask() {
                 @Override
                 public void run() {
-
-                    if(game.currentColor.equals("Blue"))
+                    if (game.currentColor.equals("Blue"))
                         blueWins++;
                     else
                         redWins++;
                     gameNum++;
                     try {
-                        updateEndGameJSON();
+                        json.updateStats(gameNum,blueWins,redWins);
+                        json.clearGameState();
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
                     restart();
                 }
-            },60000);
+            }, 60000);
             return;
         }
 
-        sendGameTweet(game);
-        saveGameState(game);
+        resetMoves();
+        twitterManager.sendGameTweet(this);
+        json.saveGameState(game);
     }
 
-    void tweetWinner(Connect4Game game) {
+    /**
+     *  Resets the moves for likes & retweets, calls the current aiplayer to calculate the 2 best moves.
+     */
+    public void resetMoves() {
+        int[] bestMoves = game.currentPlayer.bestMoves(game.grid);
 
-        StringBuilder tweet = new StringBuilder();
+        this.rtMove = bestMoves[0];
+        this.likeMove = bestMoves[1];
 
-        String bluePlus = "", redPlus = "";
+        if (rtMove == likeMove) {
 
-        if(game.currentColor.equals("Blue"))
-            bluePlus = " (+1)";
-        else
-            redPlus = " (+1)";
-
-        tweet.append("Game #" + gameNum + " | Turn: " + game.turn + " \n\n Blue wins: " + blueWins + bluePlus + "\n Red wins: " + redWins + redPlus + " \n\n\n" + game.currentEmoji + " " + game.currentColor + "'s Won! \n\n")
-                .append(game.gridToString(game.grid) + "\n Next game will start in 1 minute!");
-
-        try {
-            twitterManager.getTwitterInstance().updateStatus(tweet.toString());
-        } catch (TwitterException e) {
-            e.printStackTrace();
+            likeMove += 1;
+            if (likeMove > 6) {
+                List<Integer> list = Arrays.asList(game.currentPlayer.getFreeSpots(game.grid));
+                // if no other free spot is available
+                if (list.size() == 1 && list.contains(rtMove))
+                    likeMove = -1; // skip move
+                else
+                    for (int i : list) {
+                        if (i != rtMove) {
+                            // get the first empty slot
+                            likeMove = i;
+                            break;
+                        }
+                    }
+            }
         }
     }
 
-    public void sendGameTweet(Connect4Game game) throws TwitterException {
+    public int getBlueWins() {
+        return blueWins;
+    }
 
-       int[] bestMoves = game.currentPlayer.bestMoves(game.grid);
+    public int getRedWins() {
+        return redWins;
+    }
 
-       this.rtMove = bestMoves[0];
-       this.likeMove = bestMoves[1];
+    public int getGameNum() {
+        return gameNum;
+    }
 
-       if(rtMove == likeMove) {
+    public Connect4Game getGame() {
+        return game;
+    }
 
-           likeMove += 1;
-           if(likeMove > 6)
-           {
-               List<Integer> list = Arrays.asList(game.currentPlayer.getFreeSpots(game.grid));
-               // if no other free spot is available
-               if(list.size() == 1 && list.contains(rtMove))
-                   likeMove = -1; // skip move
-               else
-                   for(int i : list) {
-                       if(i != rtMove)
-                       {
-                           // get the first empty slot
-                           likeMove = i;
-                           break;
-                       }
-                   }
-           }
-       }
+    public int getRetweetMove() {
+        return rtMove;
+    }
 
-       StringBuilder tweet = new StringBuilder();
-
-       tweet.append("Game #" + gameNum + " | Turn: " + game.turn + " \n\n Blue wins: " + blueWins + "\n Red wins: " + redWins + " \n\n\n" + game.currentEmoji + " " + game.currentColor + "'s Turn! Choose which move to do below! \n\n")
-               .append(game.gridToString(game.grid) + "\n")
-               .append(RT_EMOJI + game.numberToEmoji(rtMove) + "         " + LIKE_EMOJI + game.numberToEmoji(likeMove));
-
-
-       twitterManager.getTwitterInstance().updateStatus(tweet.toString());
-   }
-
-
+    public int getLikeMove() {
+        return likeMove;
+    }
 }
