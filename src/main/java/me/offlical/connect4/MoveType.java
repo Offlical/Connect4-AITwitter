@@ -1,4 +1,4 @@
-package com.offlical.net.connect4;
+package me.offlical.connect4;
 
 public enum MoveType {
 

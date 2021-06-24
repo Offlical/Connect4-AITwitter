@@ -1,11 +1,12 @@
-package com.offlical.net;
+package me.offlical;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
-import com.offlical.net.ai.AIPlayer;
-import com.offlical.net.connect4.Connect4Game;
+import me.offlical.ai.AIPlayer;
+import me.offlical.connect4.Connect4Game;
+import me.offlical.twitter.TwitterManager;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
@@ -17,24 +18,22 @@ import java.util.*;
 
 public class Connect4Bot {
 
-    private Twitter twitterInstance;
+
+    private TwitterManager twitterManager;
 
     private static String LIKE_EMOJI = "❤";
     private static String RT_EMOJI = "\uD83D\uDD01";
-
-    private Status gameTweet;
 
     private PrintWriter writer;
     private int rtMove = 0;
     private int likeMove = 0;
     private Timer timer;
 
-    private long UPDATE_TIME = 1800000L;
-
+    private final long UPDATE_TIME = 1800000L;
     private Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
     private int blueWins = 0,redWins = 0,gameNum = 1;
-    private Connect4Game game;
+    private final Connect4Game game;
 
     static String CONSUMER_KEY;
     static String CONSUMER_SECRET;
@@ -52,12 +51,13 @@ public class Connect4Bot {
         CONSUMER_KEY = (String) object.get("consumer_key");
         CONSUMER_SECRET = (String) object.get("consumer_secret");
 
-        new Connect4Bot();
+        TwitterManager twitterManager = new TwitterManager(CONSUMER_KEY,CONSUMER_SECRET,ACCESS_TOKEN,ACCESS_TOKEN_SECRET);
+        new Connect4Bot(twitterManager);
     }
 
-    Connect4Bot() throws Exception {
+    Connect4Bot(TwitterManager twitterManager) throws Exception {
 
-        twitterInstance = getTwitterInstance();
+        this.twitterManager = twitterManager;
 
         AIPlayer red = new AIPlayer(5,Connect4Game.RED_PLAYER_EMOJI);
         AIPlayer blue = new AIPlayer(5,Connect4Game.BLUE_PLAYER_EMOJI);
@@ -202,8 +202,9 @@ public class Connect4Bot {
 
     void gameUpdate(Connect4Game game) throws Exception {
 
+        Status gameTweet = null;
         try {
-            gameTweet = getLatestTweet();
+            gameTweet = twitterManager.getLatestTweet();
         } catch (TwitterException e) {
             e.printStackTrace();
         }
@@ -216,12 +217,12 @@ public class Connect4Bot {
         System.out.println("Game update!");
         if(gameTweet == null) {
 
-            try {
-                gameTweet = getLatestTweet();
-            } catch (TwitterException e) {
-                e.printStackTrace();
-            }
-
+            System.out.println("====================================================================");
+            System.out.println("OH FUCK OH GOD OH FUCK THE BOT GOT A NULL TWEET OH GOD OH FUCK OH GOD");
+            System.out.println("OH FUCK OH GOD OH FUCK THE BOT GOT A NULL TWEET OH GOD OH FUCK OH GOD");
+            System.out.println("OH FUCK OH GOD OH FUCK THE BOT GOT A NULL TWEET OH GOD OH FUCK OH GOD");
+            System.out.println("====================================================================");
+            return;
         }
 
         int rts, likes;
@@ -233,7 +234,7 @@ public class Connect4Bot {
             game.play(rtMove);
         else if(likes > rts)
             game.play(likeMove);
-        else{
+        else {
             Random r = new Random();
             boolean likesPlay = r.nextBoolean();
             if(likesPlay)
@@ -286,7 +287,7 @@ public class Connect4Bot {
                 .append(game.gridToString(game.grid) + "\n Next game will start in 1 minute!");
 
         try {
-            twitterInstance.updateStatus(tweet.toString());
+            twitterManager.getTwitterInstance().updateStatus(tweet.toString());
         } catch (TwitterException e) {
             e.printStackTrace();
         }
@@ -327,25 +328,8 @@ public class Connect4Bot {
                .append(RT_EMOJI + game.numberToEmoji(rtMove) + "         " + LIKE_EMOJI + game.numberToEmoji(likeMove));
 
 
-       gameTweet = twitterInstance.updateStatus(tweet.toString());
+       twitterManager.getTwitterInstance().updateStatus(tweet.toString());
    }
 
-   public Status getLatestTweet() throws TwitterException {
-        ResponseList<Status> list = twitterInstance.getUserTimeline("Connect4GameBot",new Paging(1,1));
-
-        return list.get(0);
-   }
-
-   public static Twitter getTwitterInstance() {
-        ConfigurationBuilder cb = new ConfigurationBuilder();
-        cb.setDebugEnabled(true)
-                .setOAuthConsumerKey(CONSUMER_KEY)
-                .setOAuthConsumerSecret(CONSUMER_SECRET)
-                .setOAuthAccessToken(ACCESS_TOKEN)
-                .setOAuthAccessTokenSecret(ACCESS_TOKEN_SECRET);
-
-        TwitterFactory tf = new TwitterFactory(cb.build());
-        return tf.getInstance();
-    }
 
 }

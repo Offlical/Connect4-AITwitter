@@ -1,7 +1,7 @@
-package com.offlical.net.ai;
+package me.offlical.ai;
 
-import com.offlical.net.connect4.Connect4Game;
-import com.offlical.net.connect4.Connect4Player;
+import me.offlical.connect4.Connect4Game;
+import me.offlical.connect4.Connect4Player;
 
 import java.util.ArrayList;
 import java.util.List;

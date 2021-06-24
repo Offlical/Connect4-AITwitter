@@ -25,7 +25,7 @@
                     <manifest>
                         <addClasspath>true</addClasspath>
                         <classpathPrefix>lib/</classpathPrefix>
-                        <mainClass>com.offlical.net.Connect4Bot</mainClass>
+                        <mainClass>me.offlical.Connect4Bot</mainClass>
                     </manifest>
                 </archive>
             </configuration>
@@ -46,7 +46,7 @@
                 </descriptorRefs>
                 <archive>
                     <manifest>
-                        <mainClass>com.offlical.net.Connect4Bot</mainClass>
+                        <mainClass>me.offlical.Connect4Bot</mainClass>
                     </manifest>
                 </archive>
             </configuration>

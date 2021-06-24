@@ -1,6 +1,6 @@
-package com.offlical.net.connect4;
+package me.offlical.connect4;
 
-import com.offlical.net.ai.AIPlayer;
+import me.offlical.ai.AIPlayer;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
