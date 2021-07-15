@@ -175,6 +175,8 @@ public class AIPlayer  {
             }
         }
 
+        if(freeSpots.isEmpty())
+            return new Integer[]{-1,0};
         return freeSpots.toArray(new Integer[0]);
     }
 

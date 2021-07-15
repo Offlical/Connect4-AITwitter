@@ -22,7 +22,7 @@ public class Connect4Bot {
 
     private final long UPDATE_TIME = 1800000L;
     private int blueWins = 0, redWins, gameNum = 1;
-    private final Connect4Game game;
+    private Connect4Game game;
 
     public static void main(String[] args) throws Exception {
 
@@ -54,8 +54,16 @@ public class Connect4Bot {
         this.redWins = stats[1];
         this.gameNum = stats[2];
         json.readAndApplyGameState(game);
+        if (game.turn > 1) {
+            game.checkForEndState();
+        }
 
         resetMoves();
+        if (game.isGameOver()) {
+            gameNum += 1;
+            restart();
+            return;
+        }
         twitterManager.sendGameTweet(this);
 
         timer = new Timer();
@@ -80,10 +88,6 @@ public class Connect4Bot {
             e.printStackTrace();
         }
 
-        if (game.isGameOver()) {
-            System.out.println("game ended!");
-            return;
-        }
 
         System.out.println("Game update!");
         if (gameTweet == null) {
@@ -143,7 +147,7 @@ public class Connect4Bot {
         AIPlayer red = new AIPlayer(5, Connect4Game.RED_PLAYER_EMOJI);
         AIPlayer blue = new AIPlayer(5, Connect4Game.BLUE_PLAYER_EMOJI);
 
-        Connect4Game game = new Connect4Game(red, blue);
+        game = new Connect4Game(red, blue);
 
         try {
             resetMoves();
@@ -169,6 +173,11 @@ public class Connect4Bot {
      * Resets the moves for likes & retweets, calls the current aiplayer to calculate the 2 best moves.
      */
     public void resetMoves() {
+        if (game.isGameOver()) {
+            rtMove = -1;
+            likeMove = -1;
+            return;
+        }
         int[] bestMoves = game.currentPlayer.bestMoves(game.grid);
 
         this.rtMove = bestMoves[0];

@@ -143,13 +143,6 @@ public class Connect4Game {
 
         if (turn <= 42 && !gameOver) {
 
-            for (int row = grid.length - 1; row >= 0; row--) {
-                if (grid[row][input].equalsIgnoreCase(EMPTY_SLOT)) {
-                    grid[row][input] = currentEmoji;
-                    break;
-                }
-            }
-
             if (isWinner(currentEmoji, grid)) {
 
                 System.out.println("Win! " + currentColor);
@@ -166,6 +159,20 @@ public class Connect4Game {
             if (!validate(input, grid)) {
                 System.out.println("Invalid Move? How did this get here? Playing random move");
                 play(this.currentPlayer.getFreeSpots(grid)[0]);
+                return;
+            }
+
+            for (int row = grid.length - 1; row >= 0; row--) {
+                if (grid[row][input].equalsIgnoreCase(EMPTY_SLOT)) {
+                    grid[row][input] = currentEmoji;
+                    break;
+                }
+            }
+
+            if (isWinner(currentEmoji, grid)) {
+
+                System.out.println("Win! " + currentColor);
+                this.reset();
                 return;
             }
 
@@ -280,6 +287,7 @@ public class Connect4Game {
     }
 
     private void reset() {
+        System.out.println("Reseting game");
         gameOver = true;
     }
 
@@ -289,6 +297,23 @@ public class Connect4Game {
         currentEmoji = currentPlayer.getSymbol();
         currentColor = (currentPlayer.equals(this.bluePlayer)) ? "Blue" : "RED";
 
+    }
+
+    public void checkForEndState() {
+        boolean fullGrid = true;
+        for(int i = 0; i < 7; i++) {
+            if(grid[0][i].equals(EMPTY_SLOT))
+            {
+                System.out.println("Empty Column: " + i);
+                fullGrid = false;
+                break;
+            }
+        }
+        System.out.println("Grid full? " + fullGrid);
+        if(isWinner(currentEmoji,grid) || fullGrid) {
+            this.reset();
+        }
+        System.out.println("Current Color win?" + isWinner(currentEmoji,grid));
     }
 
     public boolean isGameOver() {
