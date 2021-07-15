@@ -107,22 +107,22 @@ public class Connect4JSON {
 
         int blueWins, redWins, gameNum;
 
-        long blueW = (long) object.getOrDefault("blue_wins", 1);
+        // java is stupid and for some god awful reason i need to put these into long variables before casting it into an int, god knows why
+        long blueW = (long) object.getOrDefault("blue_wins", 0);
         long redW = (long) object.getOrDefault("red_wins", 0);
-        long gNum = (long) object.getOrDefault("games_count", 0);
+        long gNum = (long) object.getOrDefault("games_count", 1);
 
-        gameNum = (int) gNum;
-        redWins = (int) redW;
-        blueWins = (int) blueW;
+        gameNum = (int)gNum;
+        redWins = (int)redW;
+        blueWins = (int)blueW;
 
-        return new int[] {blueWins,redWins,gameNum};
+        return new int[]{blueWins, redWins, gameNum};
     }
 
 
     public void readAndApplyGameState(Connect4Game game) throws IOException, ParseException {
         JSONObject object = (JSONObject) new JSONParser().parse(new FileReader(gameData));
-        if(object.get("last_game_state") != null)
-        {
+        if (object.get("last_game_state") != null) {
             System.out.println("Loading game from file...");
             game.fromJSON((JSONObject) object.get("last_game_state"));
             System.out.println("Loaded successfully!");
